@@ -1,0 +1,80 @@
+eureka:
+  instance:
+    non-secure-port-enabled: false
+    secure-port-enabled: true
+    secure-port: ${server.port}
+    status-page-url: https://localhost:${eureka.instance.secure-port}/actuator/info
+    health-check-url: https://localhost:${eureka.instance.secure-port}/actuator/health
+    home-page-url: https://localhost:${eureka.instance.secure-port}
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 30
+    hostname: localhost
+    secure-virtual-host-name: ${spring.application.name}
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: https://localhost:${server.port}/eureka/
+#      defaultZone: http://localhost:${server.port}/eureka/
+  server:
+    max-threads-for-peer-replication: 0
+
+---
+spring:
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+---
+spring:
+  cloud:
+    bus:
+      enabled: true
+      id: ${spring.application.name}:${spring.profiles.active}:${random.uuid}
+      refresh:
+        enabled: true
+      env:
+        enabled: true
+---
+springdoc:
+  show-actuator: true
+---
+spring:
+  zipkin:
+    enabled: true
+    base-url: http://localhost:9411
+---
+spring:
+  sleuth:
+    sampler:
+      probability: 1.0
+---
+management:
+  info:
+    java:
+      enabled: true
+    env:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+    enabled-by-default: true
+    metrigs:
+      tags:
+        application: ${spring.application.name}
+---
+info:
+  application:
+    name: ${spring.application.name}
+    developer:
+      email: fbobylev@sberbank.ru
+---
+springdoc:
+  swagger-ui:
+    configUrl: /${spring.application.name}/v3/api-docs/swagger-config
+    url: /${spring.application.name}/v3/api-docs

@@ -1,0 +1,42 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8085/eureka
+      register-with-eureka: false
+      fetch-registry: false
+---
+springdoc:
+  show-actuator: true
+---
+management:
+  info:
+    java:
+      enabled: true
+    env:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+    enabled-by-default: true
+    metrigs:
+      tags:
+        application: ${spring.application.name}
+info:
+  application:
+    name: ${spring.application.name}
+    developer:
+      email: fbobylev@sberbank.ru
+---
+keycloak:
+  realm: hotel
+  auth-server-url: http://localhost:8095
+  ssl-required: external
+  resource: login
+  #use-resource-role-mappings: true
+  bearer-only: true
+  credentials.secret: UXsOBMQ5mXPJeLIs5p51jaCuu3DdTz9C
+  public-client: true

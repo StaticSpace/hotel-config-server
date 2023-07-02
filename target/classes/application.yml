@@ -1,0 +1,59 @@
+server:
+  port: 8086
+  http2:
+    enabled: true
+  ssl:
+    enabled: true
+    client-auth: none
+    key-store:  file:/Users/20967134/Documents/ssl/conf.p12
+    key-store-type: PKCS12
+    key-store-password: 123456
+    trust-store:  file:/Users/20967134/Documents/ssl/conf.p12
+    trust-store-type: PKCS12
+    trust-store-password: 123456
+    key-alias: config-server
+---
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native, vault
+  cloud:
+    stream:
+      kafka:
+        binder:
+          brokers: localhost:9092
+    config:
+      discovery:
+        enabled: true
+      server:
+        native:
+          search-locations: classpath:/config/{application}/{profile}
+        vault:
+          host: localhost
+          port: 8200
+          authentication: token
+          token: myroot
+    bus:
+      enabled: true
+      id: ${spring.application.name}:${spring.profiles.active}:${random.uuid}
+
+
+---
+spring:
+  sleuth:
+    sampler:
+      probability: 1.0
+---
+spring:
+  zipkin:
+    enabled: true
+    base-url: http://localhost:9411
+---
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, loggers, bus-refresh, bus-env
+    enabled-by-default: true
+

@@ -1,0 +1,50 @@
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8085/eureka
+      register-with-eureka: false
+      fetch-registry: false
+---
+spring:
+  liquibase:
+    enabled: off
+  datasource:
+    username: postgres
+    password: postgres
+    url: jdbc:postgresql://localhost:5432/postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        use_sql_comments: true
+        format_sql: true
+    generate-ddl: true
+    hibernate:
+      ddl-auto: create-drop
+---
+springdoc:
+  show-actuator: true
+---
+management:
+  info:
+    java:
+      enabled: true
+    env:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, loggers
+    enabled-by-default: true
+  metrigs:
+    tags:
+      application: ${spring.application.name}
+info:
+  application:
+    name: ${spring.application.name}
+    developer:
+      email: fbobylev@sberbank.ru

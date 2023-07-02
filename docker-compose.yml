@@ -1,0 +1,147 @@
+version: "3.9"
+
+services:
+
+  vault:
+    image: hashicorp/vault:latest
+    restart: on-failure
+    cap_add:
+      - IPC_LOCK
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: myroot
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+
+  postgresql:
+    image: postgres:14.7
+    ports:
+      - "5432:5432"
+    restart: on-failure
+    environment:
+      POSTGRES_PASSWORD: postgres
+    depends_on:
+      - vault
+
+  adminer:
+    image: adminer
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    depends_on:
+      - postgresql
+
+  prometheus:
+    image: ubuntu/prometheus
+    ports:
+      - "30090:9090"
+    restart: on-failure
+    environment:
+      TZ: UTC
+    depends_on:
+      - postgresql
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    restart: on-failure
+    depends_on:
+      - prometheus
+
+  logstash:
+    container_name: logstash
+    image: logstash:7.17.10
+    ports:
+      - '5044:5044'
+      - '5000:5000/tcp'
+      - '5000:5000/udp'
+      - '9600:9600'
+    volumes:
+      - ./config/:/etc/logstash/conf.d
+    command: logstash -f /etc/logstash/conf.d/logstash.conf
+    restart: on-failure
+    depends_on:
+      - elasticsearch
+
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: elasticsearch:7.17.10
+    ports:
+      - '9200:9200'
+      - '9300:9300'
+    restart: on-failure
+    environment:
+      discovery.type: single-node
+
+
+  kibana:
+    container_name: kibana
+    image: kibana:7.17.10
+    restart: on-failure
+    ports:
+      - '5601:5601'
+    environment:
+      ELASTICSEARCH_URL: "http://elasticsearch:9300"
+    depends_on:
+      - elasticsearch
+
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    ports:
+      - '2181:2181'
+    restart: on-failure
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    ports:
+      - '9092:9092'
+      - '9101:9101'
+    restart: on-failure
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
+    restart: on-failure
+    ports:
+      - "9411:9411"
+    environment:
+      STORAGE_TYPE: 'elasticsearch'
+      ES_HOSTS: 'elasticsearch:9300'
+    depends_on:
+      - elasticsearch
+
+networks:
+  backend:
+    driver: bridge
+
+
+#  keycloak:
+#    image: bitnami/keycloak
+#    ports:
+#      - "8095:8080"
+#    restart: on-failure
+#    environment:
+#      KEYCLOAK_DATABASE_HOST: postgresql
+#      KEYCLOAK_DATABASE_PORT: 5432
+#      KEYCLOAK_DATABASE_NAME: postgres
+#      KEYCLOAK_DATABASE_USER: postgres
+#      KEYCLOAK_DATABASE_PASSWORD: postgres
+#    depends_on:
+#      - postgresql
